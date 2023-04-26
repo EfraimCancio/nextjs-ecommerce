@@ -5,6 +5,9 @@ import axios from "axios";
 
 import { useRouter } from "next/router";
 
+import Spinner from "./Spinner";
+import { ReactSortable } from "react-sortablejs";
+
 export default function ProductForm({
   _id,
   title: existingTitle,
@@ -17,11 +20,12 @@ export default function ProductForm({
   const [description, setDescription] = useState(existingDescription || "");
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
 
   async function saveProduct(ev) {
     ev.preventDefault();
-    const data = { title, description, price };
+    const data = { title, description, price, images };
     if (_id) {
       //update
       await axios.put("/api/products", { ...data, _id });
@@ -40,6 +44,7 @@ export default function ProductForm({
     const files = ev.target?.files;
 
     if (files?.length > 0) {
+      setIsUploading(true);
       const data = new FormData();
       for (const file of files) {
         data.append("file", file);
@@ -49,7 +54,12 @@ export default function ProductForm({
       setImages((oldImages) => {
         return [...oldImages, ...res.data.links];
       });
+      setIsUploading(false);
     }
+  }
+
+  function updateImagesOrder(images) {
+    setImages(images);
   }
 
   return (
@@ -62,13 +72,24 @@ export default function ProductForm({
         onChange={(ev) => setTitle(ev.target.value)}
       />
       <label>Imagens</label>
-      <div className="mb-2 flex flex-wrap gap-2">
-        {!!images?.length &&
-          images.map((link) => (
-            <div key={link} className="h-24">
-              <img src={link} alt="" className="rounded-lg" />
-            </div>
-          ))}
+      <div className="mb-2 flex flex-wrap gap-1">
+        <ReactSortable
+          list={images}
+          setList={updateImagesOrder}
+          className="flex flex-wrap gap-1"
+        >
+          {!!images?.length &&
+            images.map((link) => (
+              <div key={link} className="h-24">
+                <img src={link} alt="" className="rounded-lg" />
+              </div>
+            ))}
+        </ReactSortable>
+        {isUploading && (
+          <div className="h-24 p-1 bg-gray-200 flex items-center">
+            <Spinner />
+          </div>
+        )}
         <label className="w-24 h-24 cursor-pointer border text-center flex flex-col items-center text-sm text-gray-600 justify-center rounded-lg bg-gray-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -91,7 +112,6 @@ export default function ProductForm({
             className="hidden h-full w-full"
           />
         </label>
-        {!images?.length && <div>Produto sem Imagens</div>}
       </div>
       <label>Descrição do produto</label>
       <textarea
