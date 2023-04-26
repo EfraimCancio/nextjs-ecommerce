@@ -5,8 +5,8 @@ import axios from "axios";
 
 import { useRouter } from "next/router";
 
-import Spinner from "./Spinner";
-import { ReactSortable } from "react-sortablejs";
+import Spinner from "@/components/Spinner";
+import { ReactSortable } from "sortablejs";
 
 export default function ProductForm({
   _id,
